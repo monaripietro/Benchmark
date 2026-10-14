@@ -174,15 +174,6 @@ footer { color: var(--muted); font-size: 0.85rem; margin-top: 2rem; }
   margin-bottom: 0.75rem;
 }
 
-.model-picker { margin-top: 0.5rem; }
-.model-picker select {
-  padding: 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font: inherit;
-  max-width: 320px;
-  margin-top: 0.25rem;
-}
 
 .api-log {
   background: #0f172a;
