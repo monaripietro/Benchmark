@@ -129,6 +129,17 @@ export default function App() {
     setCurrentRun(0)
   }
 
+  const repeatTest = () => {
+    if (phase === 'running') return
+    setFinalExperiment(null)
+    setLiveRuns([])
+    setApiLog([])
+    setProgress({ completed: 0, failed: 0, cancelled: 0 })
+    setCurrentRun(0)
+    setPhase('config')
+    start()
+  }
+
   const canStart = parse?.ok === true && apiKey.trim() !== '' && model.trim() !== '' && requestedRuns >= 1
 
   const liveSorted = [...liveRuns].sort((a, b) => a.runId - b.runId)
@@ -320,13 +331,28 @@ export default function App() {
             </div>
           )}
           {phase === 'done' && (
-            <p>
-              Esperimento completato.{' '}
-              <button type="button" onClick={reset}>
-                Nuovo esperimento
-              </button>{' '}
-              (esporta i risultati prima di proseguire: al nuovo avvio il risultato non esportato verra perso)
-            </p>
+            <div>
+              <p>
+                <button type="button" className="primary" onClick={repeatTest} disabled={!canStart}>
+                  Ripeti test con la configurazione corrente
+                </button>
+              </p>
+              {!canStart && (
+                <p className="hint">Configura chiave, modello e questionario valido per rieseguire.</p>
+              )}
+              <p>
+                Esperimento completato.{' '}
+                <button type="button" onClick={reset}>
+                  Nuovo esperimento
+                </button>{' '}
+                (esporta i risultati prima di proseguire: al nuovo avvio il risultato non esportato verra perso)
+              </p>
+              <p className="note">
+                Hai cambiato modello nella sezione Configurazione? Il pulsante "Ripeti test" riesegue il
+                benchmark con il modello attualmente impostato: i risultati del test precedente restano
+                visibili fino all avvio del nuovo.
+              </p>
+            </div>
           )}
 
           <h3>Log chiamate API in tempo reale</h3>

@@ -74,7 +74,7 @@ Per un repository con altro nome, imposta `PAGES_BASE` nel workflow di deploy (e
 2. **Questionario**: in alto trovi il pulsante **Carica questionario DEMO** (benchmark sintetico, non validato scientificamente, solo per provare l'interfaccia) e accanto il pulsante **Copia prompt di formattazione**, che copia negli appunti il prompt riutilizzabile per convertire un tuo questionario nel formato richiesto. Incolla quindi il questionario nella textarea.
 3. **Anteprima e validazione**: se il questionario è valido vedi la tabella domande/chiave e il riepilogo; altrimenti l'app blocca l'avvio e indica domanda e problema. Puoi anche ispezionare il prompt esatto che sarà inviato.
 4. **Esecuzione**: avvia il benchmark; progress indicator, contatori completati/falliti/cancellati, pulsante di cancellazione e **log in tempo reale delle chiamate API** (avvio, esito, errori HTTP/rete, cancellazioni). Ogni run è una chiamata API indipendente; la risposta grezza è conservata e parsata localmente. La sezione Risultati si aggiorna dinamicamente durante l'esecuzione.
-5. **Risultati ed export**: KPI, grafici, tabelle, matrice run x domanda, elenco errori API, export CSV e JSON.
+5. **Risultati ed export**: KPI, grafici, tabelle, matrice run x domanda, elenco errori API, export CSV e JSON. Al termine è disponibile il pulsante **Ripeti test con la configurazione corrente**: utile per rieseguire il benchmark dopo aver cambiato modello, API key o numero di run nella sezione Configurazione, senza reinserire il questionario.
 
 ## Sicurezza BYOK
 
