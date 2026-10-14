@@ -171,6 +171,10 @@ export default function App() {
               {copied ? 'Prompt copiato!' : 'Copia prompt di formattazione'}
             </button>
           </div>
+          <details className="prompt-details">
+            <summary>Mostra il prompt di formattazione prima di copiarlo</summary>
+            <pre className="prompt-preview">{FORMATTING_PROMPT}</pre>
+          </details>
           <p className="note">
             Il questionario DEMO e sintetico, non validato scientificamente, solo per provare
             l interfaccia. Il prompt di formattazione serve per convertire un tuo questionario nel
