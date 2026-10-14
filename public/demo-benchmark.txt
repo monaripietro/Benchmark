@@ -1,0 +1,99 @@
+[QUESTION]
+ID: Q01
+TEXT: Qual e la capitale d'Italia?
+A: Roma
+B: Milano
+C: Torino
+D: Napoli
+E: Firenze
+ANSWER: A
+
+[QUESTION]
+ID: Q02
+TEXT: Quanto fa 7 x 8?
+A: 54
+B: 56
+C: 58
+D: 64
+E: 48
+ANSWER: B
+
+[QUESTION]
+ID: Q03
+TEXT: Quale pianeta e noto come il Pianeta Rosso?
+A: Venere
+B: Giove
+C: Marte
+D: Saturno
+E: Mercurio
+ANSWER: C
+
+[QUESTION]
+ID: Q04
+TEXT: Chi ha scritto la Divina Commedia?
+A: Petrarca
+B: Boccaccio
+C: Manzoni
+D: Dante Alighieri
+E: Leopardi
+ANSWER: D
+
+[QUESTION]
+ID: Q05
+TEXT: Quanti continenti esistono sulla Terra?
+A: 4
+B: 5
+C: 6
+D: 7
+E: 8
+ANSWER: D
+
+[QUESTION]
+ID: Q06
+TEXT: Qual e il simbolo chimico dell'acqua?
+A: CO2
+B: H2O
+C: O2
+D: NaCl
+E: HO
+ANSWER: B
+
+[QUESTION]
+ID: Q07
+TEXT: In che anno e caduto il Muro di Berlino?
+A: 1987
+B: 1990
+C: 1989
+D: 1991
+E: 1985
+ANSWER: C
+
+[QUESTION]
+ID: Q08
+TEXT: Quale e il fiume piu lungo del mondo?
+A: Il Nilo
+B: Il Amazonas
+C: Lo Yangtze
+D: Il Mississippi
+E: Il Danubio
+ANSWER: A
+
+[QUESTION]
+ID: Q09
+TEXT: Quante corde ha una chitarra classica?
+A: 4
+B: 5
+C: 6
+D: 7
+E: 12
+ANSWER: C
+
+[QUESTION]
+ID: Q10
+TEXT: Qual e l'unita di misura della forza nel Sistema Internazionale?
+A: Joule
+B: Watt
+C: Pascal
+D: Newton
+E: Kelvin
+ANSWER: D
