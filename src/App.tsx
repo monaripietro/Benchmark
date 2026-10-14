@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { parseBenchmark, type ParseResult } from './parser/benchmarkParser'
-import type { Experiment, Question } from './types'
+import type { Experiment, Question, RunResult } from './types'
 import { computeSummary } from './scoring/metrics'
 import { startExperiment, type RunnerHandle } from './runner/runner'
 import { exportCsv, exportJson } from './export/exporters'
@@ -9,6 +9,26 @@ import { KpiCards, QuestionTable, RunMatrix, ErrorsTable } from './components/Ta
 import { buildRunPrompt } from './runner/prompt'
 
 const DEMO_URL = `${import.meta.env.BASE_URL}demo-benchmark.txt`
+
+export const FORMATTING_PROMPT = `Converti il questionario seguente nel formato richiesto.
+
+Per ogni domanda usa ESATTAMENTE:
+
+[QUESTION]
+ID: Q01
+TEXT: testo domanda
+A: risposta
+B: risposta
+C: risposta
+D: risposta
+E: risposta
+ANSWER: lettera corretta
+
+Non modificare domande, risposte o chiave.
+Non correggere il contenuto.
+Non aggiungere nuove domande.
+Segnala separatamente eventuali errori, incongruenze o ambiguita.
+Restituisci prima il testo formattato e poi l'elenco delle anomalie rilevate.`
 
 type Phase = 'config' | 'running' | 'done'
 
@@ -20,9 +40,13 @@ export default function App() {
   const [questionnaireText, setQuestionnaireText] = useState('')
   const [parse, setParse] = useState<ParseResult | null>(null)
   const [phase, setPhase] = useState<Phase>('config')
-  const [experiment, setExperiment] = useState<Experiment | null>(null)
+  const [liveRuns, setLiveRuns] = useState<RunResult[]>([])
+  const [liveBenchmark, setLiveBenchmark] = useState<Question[]>([])
+  const [finalExperiment, setFinalExperiment] = useState<Experiment | null>(null)
   const [progress, setProgress] = useState({ completed: 0, failed: 0, cancelled: 0 })
   const [currentRun, setCurrentRun] = useState(0)
+  const [apiLog, setApiLog] = useState<{ time: string; run: number; level: 'info' | 'error' | 'ok'; message: string }[]>([])
+  const [copied, setCopied] = useState(false)
   const runnerRef = useRef<RunnerHandle | null>(null)
 
   const loadDemo = async () => {
@@ -32,17 +56,31 @@ export default function App() {
     setParse(parseBenchmark(text))
   }
 
-  const handleFile = async (file: File | undefined) => {
-    if (!file) return
-    const text = await file.text()
+  const copyFormattingPrompt = async () => {
+    await navigator.clipboard.writeText(FORMATTING_PROMPT)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const applyText = (text: string) => {
     setQuestionnaireText(text)
     setParse(parseBenchmark(text))
+  }
+
+  const log = (run: number, level: 'info' | 'error' | 'ok', message: string) => {
+    setApiLog((prev) => [
+      ...prev,
+      { time: new Date().toLocaleTimeString('it-IT'), run, level, message },
+    ])
   }
 
   const start = () => {
     if (!parse?.ok || !apiKey || !model || requestedRuns < 1) return
     setPhase('running')
-    setExperiment(null)
+    setFinalExperiment(null)
+    setLiveRuns([])
+    setLiveBenchmark(parse.questions)
+    setApiLog([])
     setProgress({ completed: 0, failed: 0, cancelled: 0 })
     const runner = startExperiment({
       apiKey,
@@ -50,14 +88,30 @@ export default function App() {
       requestedRuns,
       benchmark: parse.questions,
       callbacks: {
-        onRunStart: (id) => setCurrentRun(id),
+        onRunStart: (id) => {
+          setCurrentRun(id)
+          log(id, 'info', `Chiamata API a OpenRouter avviata (modello: ${model})`)
+        },
+        onRunComplete: (run) => {
+          setLiveRuns((prev) => [...prev.filter((r) => r.runId !== run.runId), run])
+          if (run.status === 'completed') {
+            const c = run.answers.filter((a) => a.status === 'correct').length
+            const w = run.answers.filter((a) => a.status === 'wrong').length
+            const i = run.answers.filter((a) => a.status === 'invalid').length
+            log(run.runId, 'ok', `Risposta ricevuta: ${c} corrette, ${w} errate, ${i} invalide`)
+          } else if (run.status === 'api_error') {
+            log(run.runId, 'error', `Errore API: ${run.errorMessage}`)
+          } else {
+            log(run.runId, 'error', 'Run cancellato dall utente')
+          }
+        },
         onProgress: (completed, failed, cancelled) => setProgress({ completed, failed, cancelled }),
       },
     })
     runnerRef.current = runner
     runner.promise.then((exp) => {
       const full: Experiment = { ...exp, summary: computeSummary(exp) }
-      setExperiment(full)
+      setFinalExperiment(full)
       setPhase('done')
     })
   }
@@ -68,12 +122,36 @@ export default function App() {
 
   const reset = () => {
     setPhase('config')
-    setExperiment(null)
+    setFinalExperiment(null)
+    setLiveRuns([])
+    setApiLog([])
     setProgress({ completed: 0, failed: 0, cancelled: 0 })
     setCurrentRun(0)
   }
 
   const canStart = parse?.ok === true && apiKey.trim() !== '' && model.trim() !== '' && requestedRuns >= 1
+
+  const liveSorted = [...liveRuns].sort((a, b) => a.runId - b.runId)
+  const liveSummary =
+    liveSorted.length > 0 && liveBenchmark.length > 0
+      ? computeSummary({ requestedRuns, runs: liveSorted, benchmark: liveBenchmark })
+      : null
+  const liveExperiment: Experiment | null =
+    liveSummary && liveBenchmark.length > 0
+      ? {
+          schemaVersion: '1.0',
+          experimentId: 'live',
+          createdAt: '',
+          model,
+          requestedRuns,
+          benchmark: liveBenchmark,
+          runs: liveSorted,
+          summary: liveSummary,
+        }
+      : null
+
+  const displayExperiment =
+    phase === 'done' && finalExperiment ? finalExperiment : liveExperiment
 
   return (
     <div className="app">
@@ -83,8 +161,34 @@ export default function App() {
       </header>
 
       <main>
+        <section aria-labelledby="sec-quiz" className="card">
+          <h2 id="sec-quiz">1. Questionario</h2>
+          <div className="toolbar">
+            <button type="button" className="primary" onClick={loadDemo}>
+              Carica questionario DEMO
+            </button>
+            <button type="button" onClick={copyFormattingPrompt}>
+              {copied ? 'Prompt copiato!' : 'Copia prompt di formattazione'}
+            </button>
+          </div>
+          <p className="note">
+            Il questionario DEMO e sintetico, non validato scientificamente, solo per provare
+            l interfaccia. Il prompt di formattazione serve per convertire un tuo questionario nel
+            formato richiesto.
+          </p>
+          <div className="field">
+            <label htmlFor="quiz-text">Incolla il questionario (formato [QUESTION])</label>
+            <textarea
+              id="quiz-text"
+              rows={8}
+              value={questionnaireText}
+              onChange={(e) => applyText(e.target.value)}
+            />
+          </div>
+        </section>
+
         <section aria-labelledby="sec-config" className="card">
-          <h2 id="sec-config">1. Configurazione</h2>
+          <h2 id="sec-config">2. Configurazione</h2>
           <div className="field">
             <label htmlFor="apikey">API key OpenRouter (BYOK)</label>
             <div className="key-row">
@@ -113,8 +217,29 @@ export default function App() {
               type="text"
               value={model}
               onChange={(e) => setModel(e.target.value)}
+              list="model-suggestions"
               placeholder="es. openai/gpt-4o-mini"
             />
+            <datalist id="model-suggestions">
+              <option value="openai/gpt-4o-mini" />
+              <option value="anthropic/claude-3-haiku" />
+              <option value="google/gemini-flash-1.5" />
+              <option value="mistralai/mistral-small" />
+            </datalist>
+            <div className="model-picker">
+              <label htmlFor="model-select">Oppure seleziona un modello suggerito:</label>
+              <select
+                id="model-select"
+                value=""
+              onChange={(e) => setModel(e.target.value)}
+            >
+                <option value="">— Scegli un modello —</option>
+                <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
+                <option value="anthropic/claude-3-haiku">anthropic/claude-3-haiku</option>
+                <option value="google/gemini-flash-1.5">google/gemini-flash-1.5</option>
+                <option value="mistralai/mistral-small">mistralai/mistral-small</option>
+              </select>
+            </div>
           </div>
           <div className="field">
             <label htmlFor="runs">Numero di somministrazioni indipendenti</label>
@@ -129,32 +254,9 @@ export default function App() {
           </div>
         </section>
 
-        <section aria-labelledby="sec-quiz" className="card">
-          <h2 id="sec-quiz">2. Questionario</h2>
-          <div className="field">
-            <label htmlFor="quiz-text">Incolla il questionario (formato [QUESTION])</label>
-            <textarea
-              id="quiz-text"
-              rows={8}
-              value={questionnaireText}
-              onChange={(e) => {
-                setQuestionnaireText(e.target.value)
-                setParse(parseBenchmark(e.target.value))
-              }}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="quiz-file">Oppure carica un file .txt</label>
-            <input id="quiz-file" type="file" accept=".txt" onChange={(e) => handleFile(e.target.files?.[0])} />
-          </div>
-          <button type="button" onClick={loadDemo}>
-            Carica benchmark DEMO (sintetico, non validato scientificamente)
-          </button>
-        </section>
-
         <section aria-labelledby="sec-preview" className="card">
           <h2 id="sec-preview">3. Anteprima e validazione</h2>
-          {parse === null && <p>Incolla o carica un questionario per vederne l'anteprima.</p>}
+          {parse === null && <p>Incolla o carica un questionario per vederne l anteprima.</p>}
           {parse && !parse.ok && (
             <div className="errors" role="alert">
               <strong>Questionario non valido, il benchmark non puo essere avviato:</strong>
@@ -239,47 +341,75 @@ export default function App() {
               (esporta i risultati prima di proseguire: al nuovo avvio il risultato non esportato verra perso)
             </p>
           )}
+
+          <h3>Log chiamate API in tempo reale</h3>
+          <div
+            className="api-log"
+            role="log"
+            aria-live="polite"
+            aria-label="Log chiamate API OpenRouter"
+          >
+            {apiLog.length === 0 ? (
+              <p className="note">Nessuna chiamata ancora effettuata.</p>
+            ) : (
+              apiLog.map((entry, i) => (
+                <p key={i} className={`log-entry log-${entry.level}`}>
+                  <span className="log-time">[{entry.time}]</span>{' '}
+                  <span className="log-run">Run {entry.run}:</span> {entry.message}
+                </p>
+              ))
+            )}
+          </div>
         </section>
 
-        {experiment && phase === 'done' && (
+        {displayExperiment && (
           <section aria-labelledby="sec-results" className="card">
             <h2 id="sec-results">5. Risultati ed export</h2>
+            {phase === 'running' && (
+              <p className="note" role="status">
+                Risultati parziali in tempo reale ({progress.completed} run completati su{' '}
+                {requestedRuns}).
+              </p>
+            )}
             <p className="note">
               Accuratezza = corrette / (corrette + errate). Le risposte invalide sono mostrate
-              separatamente e non entrano nell'accuratezza. Gli errori API non sono conteggiati come
+              separatamente e non entrano nell accuratezza. Gli errori API non sono conteggiati come
               risposte sbagliate.
             </p>
-            <KpiCards summary={experiment.summary} />
+            <KpiCards summary={displayExperiment.summary} />
             <div className="charts-grid">
               <BarChart
                 title="Accuratezza per domanda"
-                data={experiment.summary.perQuestion.map((q) => ({ label: q.questionId, value: q.correctPct }))}
+                data={displayExperiment.summary.perQuestion.map((q) => ({
+                  label: q.questionId,
+                  value: q.correctPct,
+                }))}
               />
               <BarChart
                 title="Accuratezza per run"
-                data={experiment.summary.perRun
+                data={displayExperiment.summary.perRun
                   .filter((r) => r.status === 'completed')
                   .map((r) => ({ label: `Run ${r.runId}`, value: r.correctPct }))}
               />
               <DonutChart
                 title="Corrette vs Errate vs Invalide"
                 segments={[
-                  { label: 'Corrette', value: experiment.summary.correct, color: '#16a34a', pattern: '[OK]' },
-                  { label: 'Errate', value: experiment.summary.wrong, color: '#dc2626', pattern: '[X]' },
-                  { label: 'Invalide', value: experiment.summary.invalid, color: '#9ca3af', pattern: '[?]' },
+                  { label: 'Corrette', value: displayExperiment.summary.correct, color: '#16a34a', pattern: '[OK]' },
+                  { label: 'Errate', value: displayExperiment.summary.wrong, color: '#dc2626', pattern: '[X]' },
+                  { label: 'Invalide', value: displayExperiment.summary.invalid, color: '#9ca3af', pattern: '[?]' },
                 ]}
               />
-              <DistributionChart rows={experiment.summary.perQuestion} />
+              <DistributionChart rows={displayExperiment.summary.perQuestion} />
             </div>
-            <QuestionTable summary={experiment.summary} />
-            <RunMatrix experiment={experiment} />
-            <ErrorsTable experiment={experiment} />
+            <QuestionTable summary={displayExperiment.summary} />
+            <RunMatrix experiment={displayExperiment} />
+            <ErrorsTable experiment={displayExperiment} />
             <h3>Export</h3>
             <p>
-              <button type="button" onClick={() => exportCsv(experiment)}>
+              <button type="button" onClick={() => exportCsv(displayExperiment)}>
                 Esporta CSV
               </button>{' '}
-              <button type="button" onClick={() => exportJson(experiment)}>
+              <button type="button" onClick={() => exportJson(displayExperiment)}>
                 Esporta JSON
               </button>{' '}
               <span className="hint">Gli export non contengono la API key.</span>
@@ -289,7 +419,10 @@ export default function App() {
       </main>
 
       <footer>
-        <p>LLM Benchmark Runner — prototipo didattico client-side. API OpenAI-compatible via OpenRouter.</p>
+        <p>
+          LLM Benchmark Runner — strumento educativo/didattico, realizzato con Vibe Mistral in
+          modalita code. API OpenAI-compatible via OpenRouter.
+        </p>
       </footer>
     </div>
   )
