@@ -42,7 +42,11 @@ npm run dev
 npm run build
 ```
 
-Output in `dist/`, con base path configurato per GitHub Pages (`/Benchmark/`).
+Output in `dist/`. Il base path e configurato via variabile `PAGES_BASE` (default `/`, corretto per dominio custom come `https://benchmark.monaripietro.it/`). Per la pubblicazione su `https://utente.github.io/nome-repository/` usare:
+
+```bash
+PAGES_BASE=/nome-repository/ npm run build
+```
 
 ## Test
 
@@ -58,9 +62,9 @@ I test coprono: parser questionario (valido, ID duplicati, opzione mancante, ANS
 Il workflow `.github/workflows/deploy.yml` pubblica automaticamente la build su GitHub Pages a ogni push su `main`:
 
 1. `Settings > Pages` del repository: scegli **Source: GitHub Actions**.
-2. Il sito sarà disponibile su `https://monaripietro.github.io/Benchmark/`.
+2. Il sito e pubblicato sul dominio custom configurato (`https://benchmark.monaripietro.it/`). Su GitHub Pages e' servito alla radice, quindi la build usa `PAGES_BASE=/` (default).
 
-Per un repository con altro nome, aggiorna `base` in `vite.config.ts`.
+Per un repository con altro nome, imposta `PAGES_BASE` nel workflow di deploy (es. `PAGES_BASE: /Benchmark/ npm run build`).
 
 ## Uso della webapp
 
