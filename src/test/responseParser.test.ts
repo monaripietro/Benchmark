@@ -65,3 +65,13 @@ describe('scoring', () => {
     expect(cases[0]).toEqual({ questionId: 'Q01', selected: null, expected: 'C', status: 'invalid' })
   })
 })
+
+import { FORMATTING_PROMPT } from '../App'
+
+describe('prompt di formattazione', () => {
+  it('contiene gli a capo corretti nel blocco di esempio', () => {
+    const block = '[QUESTION]\nID: Q01\nTEXT: testo domanda\nA: risposta\nB: risposta\nC: risposta\nD: risposta\nE: risposta\nANSWER: lettera corretta'
+    expect(FORMATTING_PROMPT).toContain(block)
+    expect(FORMATTING_PROMPT.split('\n').length).toBeGreaterThan(10)
+  })
+})
