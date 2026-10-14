@@ -166,3 +166,38 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 }
 
 footer { color: var(--muted); font-size: 0.85rem; margin-top: 2rem; }
+
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.model-picker { margin-top: 0.5rem; }
+.model-picker select {
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  max-width: 320px;
+  margin-top: 0.25rem;
+}
+
+.api-log {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  max-height: 220px;
+  overflow-y: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+.log-entry { margin: 0.15rem 0; }
+.log-time { color: #94a3b8; }
+.log-run { font-weight: 700; }
+.log-info .log-run { color: #60a5fa; }
+.log-ok .log-run { color: #4ade80; }
+.log-error .log-run { color: #f87171; }
+.log-error { color: #fecaca; }
