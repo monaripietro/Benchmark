@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { parseBenchmark, type ParseResult } from './parser/benchmarkParser'
-import type { Experiment, Question, RunResult, Summary } from './types'
+import type { Experiment, Question, RunResult } from './types'
 import { computeSummary } from './scoring/metrics'
 import { startExperiment, type RunnerHandle } from './runner/runner'
 import { exportCsv, exportJson } from './export/exporters'
@@ -131,22 +131,24 @@ export default function App() {
 
   const canStart = parse?.ok === true && apiKey.trim() !== '' && model.trim() !== '' && requestedRuns >= 1
 
+  const liveSorted = [...liveRuns].sort((a, b) => a.runId - b.runId)
+  const liveSummary =
+    liveSorted.length > 0 && liveBenchmark.length > 0
+      ? computeSummary({ requestedRuns, runs: liveSorted, benchmark: liveBenchmark })
+      : null
   const liveExperiment: Experiment | null =
-    liveRuns.length > 0 && liveBenchmark.length > 0
+    liveSummary && liveBenchmark.length > 0
       ? {
           schemaVersion: '1.0',
           experimentId: 'live',
-          createdAt: new Date().toISOString(),
+          createdAt: '',
           model,
           requestedRuns,
           benchmark: liveBenchmark,
-          runs: [...liveRuns].sort((a, b) => a.runId - b.runId),
-          summary: null as unknown as Summary,
+          runs: liveSorted,
+          summary: liveSummary,
         }
       : null
-  if (liveExperiment) {
-    liveExperiment.summary = computeSummary(liveExperiment)
-  }
 
   const displayExperiment =
     phase === 'done' && finalExperiment ? finalExperiment : liveExperiment
