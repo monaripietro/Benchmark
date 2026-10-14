@@ -35,7 +35,7 @@ type Phase = 'config' | 'running' | 'done'
 export default function App() {
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
-  const [model, setModel] = useState('')
+  const [model, setModel] = useState('meta-llama/llama-3.3-70b-instruct:free')
   const [requestedRuns, setRequestedRuns] = useState(10)
   const [questionnaireText, setQuestionnaireText] = useState('')
   const [parse, setParse] = useState<ParseResult | null>(null)
@@ -217,29 +217,12 @@ export default function App() {
               type="text"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              list="model-suggestions"
-              placeholder="es. openai/gpt-4o-mini"
+              placeholder="provider/model"
             />
-            <datalist id="model-suggestions">
-              <option value="openai/gpt-4o-mini" />
-              <option value="anthropic/claude-3-haiku" />
-              <option value="google/gemini-flash-1.5" />
-              <option value="mistralai/mistral-small" />
-            </datalist>
-            <div className="model-picker">
-              <label htmlFor="model-select">Oppure seleziona un modello suggerito:</label>
-              <select
-                id="model-select"
-                value=""
-              onChange={(e) => setModel(e.target.value)}
-            >
-                <option value="">— Scegli un modello —</option>
-                <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
-                <option value="anthropic/claude-3-haiku">anthropic/claude-3-haiku</option>
-                <option value="google/gemini-flash-1.5">google/gemini-flash-1.5</option>
-                <option value="mistralai/mistral-small">mistralai/mistral-small</option>
-              </select>
-            </div>
+            <p className="note">
+              Default: <code>meta-llama/llama-3.3-70b-instruct:free</code> (modello gratuito di
+              OpenRouter). Puoi sostituirlo con qualsiasi ID modello OpenRouter.
+            </p>
           </div>
           <div className="field">
             <label htmlFor="runs">Numero di somministrazioni indipendenti</label>

@@ -70,7 +70,7 @@ Per un repository con altro nome, imposta `PAGES_BASE` nel workflow di deploy (e
 
 ## Uso della webapp
 
-1. **Configurazione**: inserisci la API key OpenRouter (campo password con mostra/nascondi), l'ID del modello (es. `openai/gpt-4o-mini`) e il numero di somministrazioni indipendenti.
+1. **Configurazione**: inserisci la API key OpenRouter (campo password con mostra/nascondi), l'ID del modello (default `meta-llama/llama-3.3-70b-instruct:free`, un modello gratuito di OpenRouter; sostituibile con qualsiasi ID, es. `openai/gpt-4o-mini`) e il numero di somministrazioni indipendenti.
 2. **Questionario**: in alto trovi il pulsante **Carica questionario DEMO** (benchmark sintetico, non validato scientificamente, solo per provare l'interfaccia) e accanto il pulsante **Copia prompt di formattazione**, che copia negli appunti il prompt riutilizzabile per convertire un tuo questionario nel formato richiesto. Incolla quindi il questionario nella textarea.
 3. **Anteprima e validazione**: se il questionario è valido vedi la tabella domande/chiave e il riepilogo; altrimenti l'app blocca l'avvio e indica domanda e problema. Puoi anche ispezionare il prompt esatto che sarà inviato.
 4. **Esecuzione**: avvia il benchmark; progress indicator, contatori completati/falliti/cancellati, pulsante di cancellazione e **log in tempo reale delle chiamate API** (avvio, esito, errori HTTP/rete, cancellazioni). Ogni run è una chiamata API indipendente; la risposta grezza è conservata e parsata localmente. La sezione Risultati si aggiorna dinamicamente durante l'esecuzione.
